@@ -8,6 +8,7 @@ export default function App() {
   const [timerMin, setTimerMin] = useState("1");
   const [timerSec, setTimerSec] = useState("00");
   const [isRunning, setRunning] = useState(false);
+  const [isInIntervalSession, setIntervalSession] = useState(false);
   const [totalSessions, setTotalSessions] = useState(0);
   const [records, setRecords] = useState([
     {
@@ -22,11 +23,14 @@ export default function App() {
     const interval = setInterval(() => {
       setTimerSec((sec) => {
         const s = parseInt(sec);
-
         if (s === 0) {
           setTimerMin((min) => {
-            const m = parseInt(min); // Algum erro de lógica por aqui, ele fica travado no 59 após zerar
+            const m = parseInt(min);
             if (m === 0) {
+              setIntervalSession((val) => !val);
+              if (isInIntervalSession) {
+                return "10"; // O intervalo entre sessões
+              }
               clearInterval(interval);
               // Agrupando a atualização para usar o valor exato recém-calculado
               setTotalSessions((prevTotal) => {
@@ -43,12 +47,12 @@ export default function App() {
                 }
                 return newTotal;
               });
+
               return "00";
             }
             return String(m - 1).padStart(2, "0");
           });
-
-          return "59";
+          return "59"; // Aqui seria o lugar para chamar uma lógica de esta no intervalo pomodoro ou não
         }
 
         return String(s - 1).padStart(2, "0");
@@ -56,14 +60,14 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, isInIntervalSession]);
 
   useEffect(() => {
     window.localStorage.setItem("1", JSON.stringify(records));
   }, [records]);
 
   useEffect(() => {
-    const notify = () => toast("Sessão Finalizada !");
+    const notify = () => toast.success("Sessão Finalizada !");
     if (timerSec == "00" && timerMin == "00") {
       notify();
     }
