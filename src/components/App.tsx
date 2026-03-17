@@ -9,6 +9,7 @@ export default function App() {
   const [timerSec, setTimerSec] = useState("00");
   const [isRunning, setRunning] = useState(false);
   const [isInIntervalSession, setIntervalSession] = useState(false);
+  const [isInPomodoroSession, setPomodoroSession] = useState(false);
   const [totalSessions, setTotalSessions] = useState(0);
   const [records, setRecords] = useState([
     {
@@ -27,27 +28,29 @@ export default function App() {
           setTimerMin((min) => {
             const m = parseInt(min);
             if (m === 0) {
+              setPomodoroSession((v) => !v);
               setIntervalSession((val) => !val);
               if (isInIntervalSession) {
                 return "10"; // O intervalo entre sessões
               }
               clearInterval(interval);
-              // Agrupando a atualização para usar o valor exato recém-calculado
-              setTotalSessions((prevTotal) => {
-                const newTotal = prevTotal + 1;
-                if (newTotal > 0 && newTotal % 4 === 0) {
-                  const dataAtual = new Date(Date.now());
-                  setRecords((rec) => [
-                    ...rec,
-                    {
-                      id: v6(),
-                      data: dataAtual.toISOString(),
-                    },
-                  ]);
-                }
-                return newTotal;
-              });
-
+              if (isInPomodoroSession) {
+                // Agrupando a atualização para usar o valor exato recém-calculado
+                setTotalSessions((prevTotal) => {
+                  const newTotal = prevTotal + 1;
+                  if (newTotal > 0 && newTotal % 4 === 0) {
+                    const dataAtual = new Date(Date.now());
+                    setRecords((rec) => [
+                      ...rec,
+                      {
+                        id: v6(),
+                        data: dataAtual.toISOString(),
+                      },
+                    ]);
+                  }
+                  return newTotal;
+                });
+              }
               return "00";
             }
             return String(m - 1).padStart(2, "0");
@@ -60,7 +63,7 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, isInIntervalSession]);
+  }, [isRunning, isInIntervalSession, isInPomodoroSession]);
 
   useEffect(() => {
     window.localStorage.setItem("1", JSON.stringify(records));
