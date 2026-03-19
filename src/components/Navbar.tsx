@@ -36,6 +36,14 @@ export default function Navbar() {
           >
             Contact
           </NavLink>
+
+          <NavLink
+            className={({ isActive }) => (isActive ? navLinkSelected : navLink)}
+            to="/records"
+          >
+            Records
+          </NavLink>
+
         </div>
       </nav>
     </header>
