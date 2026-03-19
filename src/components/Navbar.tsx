@@ -12,7 +12,7 @@ export default function Navbar() {
         {/* Logo */}
         <div className="flex items-center gap-2 font-semibold text-lg">
           <Brain className="w-6 h-6 text-blue-400" />
-          <span>MindApp</span>
+          <span>PomodoroApp</span>
         </div>
 
         {/* Rotas */}

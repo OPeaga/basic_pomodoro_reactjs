@@ -5,97 +5,102 @@ import { v6 } from "uuid";
 import toast, { Toaster } from "react-hot-toast";
 import SessionBar from "./SessionBar.tsx";
 
-type record = {
+type SessionType = "pomodoro" | "interval";
+
+type PomodoroRecord = {
   id: string;
   data: string;
 };
 
 export default function App() {
-  const [timerMin, setTimerMin] = useState("00");
-  const [timerSec, setTimerSec] = useState("10");
+  // Tempos
+  const POMODORO_MINS = 1;
+  const INTERVAL_MINS = 1;
+
+  // Lógica de estado simplificada: usamos apenas 'timeLeft' (tempo restante em segundos)
+  const [timeLeft, setTimeLeft] = useState(POMODORO_MINS * 60);
   const [isRunning, setRunning] = useState(false);
-  const [isInIntervalSession, setIntervalSession] = useState(false);
-  const [isInPomodoroSession, setPomodoroSession] = useState(false);
+
+  const [sessionType, setSessionType] = useState<SessionType>("pomodoro");
+
   const [totalSessions, setTotalSessions] = useState(0);
-  const [records, setRecords] = useState<record[]>([
+  const [records, setRecords] = useState<PomodoroRecord[]>([
     {
       id: v6(),
-      data: "'2026-03-15T17:44:47.111Z'",
+      data: new Date().toISOString(),
     },
   ]);
 
+  // Função disparada ao término do cronômetro --> Não rodando propriamente
+  const handleSessionEnd = () => {
+    setRunning(false);
+
+    if (sessionType === "pomodoro") {
+      toast.success("Pomodoro Finalizado! Hora de descansar.");
+      setSessionType("interval");
+      setTimeLeft(INTERVAL_MINS * 60);
+
+      // Incrementar os registros de pomodoro finalizados (cada 4, salva)
+      setTotalSessions((prevTotal) => {
+        const newTotal = prevTotal + 1;
+        if (newTotal > 0 && newTotal % 4 === 0) {
+          setRecords((rec) => [
+            ...rec,
+            { id: v6(), data: new Date().toISOString() },
+          ]);
+        }
+        return newTotal;
+      });
+    } else {
+      toast.success("Intervalo Finalizado! De volta ao foco.");
+      setSessionType("pomodoro");
+      setTimeLeft(POMODORO_MINS * 60);
+    }
+  };
+
+  // Efeito principal do cronômetro
   useEffect(() => {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
-      setTimerSec((sec) => {
-        const s = parseInt(sec);
-        if (s === 0) {
-          setTimerMin((min) => {
-            const m = parseInt(min);
-            if (m === 0) {
-              setPomodoroSession((v) => !v);
-              setIntervalSession((val) => !val);
-              if (isInIntervalSession) {
-                return "10"; // O intervalo entre sessões
-              }
-              clearInterval(interval);
-              if (isInPomodoroSession) {
-                // Agrupando a atualização para usar o valor exato recém-calculado
-                setTotalSessions((prevTotal) => {
-                  const newTotal = prevTotal + 1;
-                  if (newTotal > 0 && newTotal % 4 === 0) {
-                    const dataAtual = new Date(Date.now());
-                    setRecords((rec) => [
-                      ...rec,
-                      {
-                        id: v6(),
-                        data: dataAtual.toISOString(),
-                      },
-                    ]);
-                  }
-                  return newTotal;
-                });
-              }
-              return "00";
-            }
-            return String(m - 1).padStart(2, "0");
-          });
-          return "59"; // Aqui seria o lugar para chamar uma lógica de esta no intervalo pomodoro ou não
-        }
-
-        return String(s - 1).padStart(2, "0");
-      });
+      setTimeLeft((prevTime) => prevTime - 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, isInIntervalSession, isInPomodoroSession]);
+  }, [isRunning, timeLeft]); // Roda sempre que isRunning ou timeLeft mudam
 
+  // Efeito para salvar os records no cache/localStorage
   useEffect(() => {
     window.localStorage.setItem("1", JSON.stringify(records));
   }, [records]);
 
-  useEffect(() => {
-    const notify = () => toast.success("Sessão Finalizada !");
-    if (timerSec == "00" && timerMin == "00") {
-      notify();
-    }
-  }, [timerSec, timerMin]);
+  // Formatador de tempo para exibição em tela
+  const timerMin = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+  const timerSec = String(timeLeft % 60).padStart(2, "0");
+
+  const isPomodoro = sessionType === "pomodoro";
 
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center py-10 gap-9 font-sans max-h-screen">
-        <h1 className="text-5xl font-semibold tracking-wid text-white drop-shadow-sm">
-          Pomodoro
+      <div
+        className={`min-h-screen flex flex-col items-center justify-center py-10 gap-9 font-sans transition-colors duration-500 max-h-screen ${
+          isPomodoro ? "bg-slate-900" : "bg-teal-950"
+        }`}
+      >
+        <h1 className="text-5xl font-semibold tracking-widest text-white drop-shadow-sm">
+          {isPomodoro ? "Pomodoro" : "Intervalo"}
         </h1>
 
-        <Clock props_style={"w-48 h-48 text-blue-400 drop-shadow-md"} />
+        <Clock
+          props_style={`w-48 h-48 drop-shadow-md transition-colors duration-500 ${
+            isPomodoro ? "text-blue-400" : "text-teal-400"
+          }`}
+        />
+        <SessionBar totalSessions={totalSessions} />
 
-        <SessionBar currentSession={totalSessions} />
-
-        <h1 className="text-8xl font-mono flex font-bold text-white bg-slate-800 border border-slate-700 px-10 py-8 rounded-2xl shadow-lg tracking-widest">
-          {timerMin.padStart(2, "0")} : {timerSec.padStart(2, "0")}
+        <h1 className="text-8xl font-mono flex font-bold text-white bg-slate-800 border border-slate-700 px-10 py-8 rounded-2xl shadow-lg tracking-widest transition-colors duration-500">
+          {timerMin} : {timerSec}
         </h1>
 
         <Button isRunning={isRunning} handleClick={setRunning} />
