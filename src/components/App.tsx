@@ -3,15 +3,21 @@ import { useState, useEffect } from "react";
 import { Button } from "./Button.tsx";
 import { v6 } from "uuid";
 import toast, { Toaster } from "react-hot-toast";
+import SessionBar from "./SessionBar.tsx";
+
+type record = {
+  id: string;
+  data: string;
+};
 
 export default function App() {
-  const [timerMin, setTimerMin] = useState("1");
-  const [timerSec, setTimerSec] = useState("00");
+  const [timerMin, setTimerMin] = useState("00");
+  const [timerSec, setTimerSec] = useState("10");
   const [isRunning, setRunning] = useState(false);
   const [isInIntervalSession, setIntervalSession] = useState(false);
   const [isInPomodoroSession, setPomodoroSession] = useState(false);
   const [totalSessions, setTotalSessions] = useState(0);
-  const [records, setRecords] = useState([
+  const [records, setRecords] = useState<record[]>([
     {
       id: v6(),
       data: "'2026-03-15T17:44:47.111Z'",
@@ -85,6 +91,8 @@ export default function App() {
         </h1>
 
         <Clock props_style={"w-48 h-48 text-blue-400 drop-shadow-md"} />
+
+        <SessionBar currentSession={totalSessions} />
 
         <h1 className="text-8xl font-mono flex font-bold text-white bg-slate-800 border border-slate-700 px-10 py-8 rounded-2xl shadow-lg tracking-widest">
           {timerMin.padStart(2, "0")} : {timerSec.padStart(2, "0")}
