@@ -2,9 +2,9 @@ import { Brain } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 export default function Navbar() {
-  const navLink = "hover:text-blue-400 transition-colors cursor-pointer";
+  const navLink = "hover:text-blue-400 transition-colors cursor-pointer text-slate-300";
   const navLinkSelected =
-    "text-blue-900 transition-colors cursor-pointer underline";
+    "text-cyan-400 font-semibold transition-colors cursor-pointer";
 
   return (
     <header className="w-full bg-slate-900 text-white shadow-md py-2">
