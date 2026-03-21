@@ -41,20 +41,20 @@ export function usePomodoro() {
   }, [sessionType]);
 
   useEffect(() => {
-    if (timeLeft === 0 && isRunning) {
-      handleSessionEnd();
-    }
-  }, [timeLeft, isRunning, handleSessionEnd]);
-
-  useEffect(() => {
-    if (!isRunning || timeLeft === 0) return;
+    if (!isRunning) return;
 
     const interval = setInterval(() => {
-      setTimeLeft((prevTime) => prevTime - 1);
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          handleSessionEnd();
+          return 0;
+        }
+        return prevTime - 1;
+      });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft]);
+  }, [isRunning, handleSessionEnd]);
 
   useEffect(() => {
     window.localStorage.setItem("1", JSON.stringify(records));
