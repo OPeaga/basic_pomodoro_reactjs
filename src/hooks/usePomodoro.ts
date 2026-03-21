@@ -11,7 +11,7 @@ export function usePomodoro() {
   const [isRunning, setRunning] = useState(false);
   const [sessionType, setSessionType] = useState<SessionType>("pomodoro");
   const [totalSessions, setTotalSessions] = useState(0);
-  const [records, setRecords] = useState<PomodoroRecord[]>(
+  const [records, setRecords] = useState<PomodoroRecord[]>(() =>
     JSON.parse(localStorage.getItem("1") || "[]")
   );
 
@@ -23,38 +23,37 @@ export function usePomodoro() {
       setSessionType("interval");
       setTimeLeft(INTERVAL_MINS * 60);
 
-      setTotalSessions((prevTotal) => {
-        const newTotal = prevTotal + 1;
-        if (newTotal > 0 && newTotal % 4 === 0) {
-          setRecords((rec) => [
-            ...rec,
-            { id: v6(), data: new Date().toISOString() },
-          ]);
-        }
-        return newTotal;
-      });
+      const newTotal = totalSessions + 1;
+      setTotalSessions(newTotal);
+
+      if (newTotal > 0 && newTotal % 4 === 0) {
+        setRecords((rec) => [
+          ...rec,
+          { id: v6(), data: new Date().toISOString() },
+        ]);
+      }
     } else {
       toast.success("Intervalo Finalizado! De volta ao foco.");
       setSessionType("pomodoro");
       setTimeLeft(POMODORO_MINS * 60);
     }
-  }, [sessionType]);
+  }, [sessionType, totalSessions]);
 
   useEffect(() => {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          handleSessionEnd();
-          return 0;
-        }
-        return prevTime - 1;
-      });
+      setTimeLeft((prevTime) => prevTime - 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, handleSessionEnd]);
+  }, [isRunning]);
+
+  useEffect(() => {
+    if (timeLeft <= 0 && isRunning) {
+      handleSessionEnd();
+    }
+  }, [timeLeft, isRunning, handleSessionEnd]);
 
   useEffect(() => {
     window.localStorage.setItem("1", JSON.stringify(records));
